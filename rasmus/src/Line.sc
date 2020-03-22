@@ -35,4 +35,4 @@ def Line(x1: Int, y1: Int, x2: Int, y2: Int, slopeError: Int = 0): List[(Int, In
   }
 }
 
-Line(0, 0, 9, 4);
+Line(1,1, 1, 5)
