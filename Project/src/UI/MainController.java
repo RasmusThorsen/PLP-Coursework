@@ -1,5 +1,6 @@
 package UI;
 
+import Scala.Painter;
 import UI.Controllers.DrawingAreaController;
 import UI.Controllers.MenuBarController;
 import UI.Controllers.SystemOutputController;
@@ -7,6 +8,7 @@ import UI.Controllers.UserInputController;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.stage.Window;
+import scala.collection.immutable.List;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -27,6 +29,10 @@ public class MainController {
 
     public void sendValueToSystemOutput (String text) {
         systemOutputController.setTextArea(text);
-        drawingAreaController.draw();
+
+    }
+
+    public void sendShapesToDrawingArea(List<Painter.Shape> shapes) {
+        drawingAreaController.draw(shapes);
     }
 }

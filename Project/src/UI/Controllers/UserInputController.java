@@ -1,11 +1,16 @@
 package UI.Controllers;
 
 
+import Scala.Painter;
 import UI.MainController;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
-import scala.Int;
+import scala.Tuple3;
+import scala.collection.immutable.List;
+
+import static jdk.nashorn.internal.objects.Global.print;
+import static jdk.nashorn.internal.objects.Global.println;
 
 
 public class UserInputController {
@@ -19,7 +24,8 @@ public class UserInputController {
     }
 
     public void handleBtnDrawClick() {
-        String test = Scala.Painter.Line(0,0,8,4,0).toString();
-        mainController.sendValueToSystemOutput(test);
+        List<Painter.Shape> shapes = Painter.Draw(this.inputText.getText());
+        System.out.println(shapes.toString());
+        this.mainController.sendShapesToDrawingArea(shapes);
     }
 }
