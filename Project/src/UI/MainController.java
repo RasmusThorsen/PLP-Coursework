@@ -27,5 +27,6 @@ public class MainController {
 
     public void sendValueToSystemOutput (String text) {
         systemOutputController.setTextArea(text);
+        drawingAreaController.draw();
     }
 }

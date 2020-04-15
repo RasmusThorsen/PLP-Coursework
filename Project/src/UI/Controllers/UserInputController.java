@@ -19,7 +19,7 @@ public class UserInputController {
     }
 
     public void handleBtnDrawClick() {
-        String test = Scala.Painter.Line(0,0,4,4,0).toString();
+        String test = Scala.Painter.Line(0,0,8,4,0).toString();
         mainController.sendValueToSystemOutput(test);
     }
 }

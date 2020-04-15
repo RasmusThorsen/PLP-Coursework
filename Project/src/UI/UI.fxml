@@ -29,7 +29,8 @@
    <children>
         <fx:include fx:id="menuBar"
                     source="FXML-files/MenuBar.fxml"
-                    GridPane.columnSpan="2"/>
+                    GridPane.columnSpan="2"
+                    />
 
         <fx:include fx:id="drawingArea"
                     source="FXML-files/DrawingArea.fxml"
