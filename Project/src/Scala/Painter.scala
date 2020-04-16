@@ -1,6 +1,7 @@
 package Scala
 
 import com.sun.javaws.exceptions.InvalidArgumentException
+import javafx.scene.paint.Color
 
 object Painter {
 
@@ -22,6 +23,9 @@ object Painter {
 
     val interpolatedCommands = commands.map(c => InterpolateCommand(c)).toList
 
+    var c = Circle(10, 10, 20, "black")
+    var f = new Shape(fill("red", new Point(c.head.x+1, c.head.y-1, "black"), c))
+    return f :: List.empty
     CommandsToShapes(interpolatedCommands);
   }
 
@@ -51,6 +55,11 @@ object Painter {
       p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
     })))
   }
+
+  def fill(color: String, point: Point, points: List[Point] ): List[Point] = {
+      if(points.exists(p => p.x == point.x && p.y == point.y)) return points
+      fill(color, new Point(point.x, point.y-1, color), new Point(point.x, point.y, color) :: fill(color, new Point(point.x, point.y+1, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x-1, point.y, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x+1, point.y, color), new Point(point.x, point.y, color) ::points))))
+    }
 
   def InterpolateDrawCommand(color: String, objects: String): List[Shape] = objects match {
     case s"($cmd)) $rest" => CommandsToShapes(List(InterpolateCommand(s"($cmd))", color))) ::: InterpolateDrawCommand(color, rest)
