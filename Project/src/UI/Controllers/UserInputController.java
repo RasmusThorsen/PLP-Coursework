@@ -24,8 +24,11 @@ public class UserInputController {
     }
 
     public void handleBtnDrawClick() {
-        List<Painter.Shape> shapes = Painter.Draw(this.inputText.getText());
-        System.out.println(shapes.toString());
-        this.mainController.sendShapesToDrawingArea(shapes);
+        try {
+            List<Painter.Shape> shapes = Painter.Draw(this.inputText.getText());
+            this.mainController.sendShapesToDrawingArea(shapes);
+        } catch (IllegalArgumentException e) {
+            this.mainController.sendValueToSystemOutput(e.getMessage());
+        }
     }
 }
