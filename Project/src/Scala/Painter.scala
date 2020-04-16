@@ -8,44 +8,41 @@ object Painter {
   class Shape(var points: List[Point])
 
   sealed abstract class Command
-  case class LineCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
-  case class RectangleCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
-  case class CircleCommand(x1: Int, y1: Int, r: Int) extends Command
+  case class LineCommand(x1: Int, y1: Int, x2: Int, y2: Int, color: String ) extends Command
+  case class RectangleCommand(x1: Int, y1: Int, x2: Int, y2: Int, color: String) extends Command
+  case class CircleCommand(x1: Int, y1: Int, r: Int, color: String) extends Command
   case class BoundingBoxCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
+  case class TextCommand(x1: Int, y1: Int, text: String, color: String) extends Command
+  case class DrawCommand(color: String, rawObjects: String) extends Command
   case class UnknownCommand() extends Command
-
-  /*sealed abstract class Shape(var points: List[Point])
-  }
-  case class Line(points: List[Point]) extends Shape
-  case class BoundingBox(shapesInside: List[Shape]) extends Shape
-  case class Rectangle(points: List[Point]) extends Shape
-  case class Circle(points: List[Point]) extends Shape */
-
 
   def Draw(program: String): List[Shape] = {
     // split the program into commands
     val commands = program.split('\n')
 
-    val interpolatedCommands = commands.map(c => InterpretCommand(c)).toList
+    val interpolatedCommands = commands.map(c => InterpolateCommand(c)).toList
 
     CommandsToShapes(interpolatedCommands);
   }
 
   // reference: https://stackoverflow.com/questions/10804581/read-case-class-object-from-string-in-scala-something-like-haskells-read-typ
   // check how to regex integers^
-  def InterpretCommand(command: String): Command = command match {
+  def InterpolateCommand(command: String, color: String = "black"): Command = command match {
     case s"(BOUNDING-BOX ($x1 $y1) ($x2 $y2))" => BoundingBoxCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt)
-    case s"(LINE ($x1 $y1) ($x2 $y2))" => LineCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt)
-    case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt)
-    case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt)
+    case s"(LINE ($x1 $y1) ($x2 $y2))" => LineCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
+    case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
+    case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt,color)
+    case s"(TEXT-AT ($x1 $y1) $t" => TextCommand(x1.toInt, y1.toInt, t, color)
+    case s"(DRAW $color $objects)" => DrawCommand(color, objects)
     case _ => UnknownCommand() // TODO throw exception?
   }
 
   def CommandsToShapes(commands: List[Command]): List[Shape] = commands match {
     case BoundingBoxCommand(x1,y1,x2,y2) :: _ => RemoveCoordinatesOutsideBoundingArea(x1, y1, x2, y2, CommandsToShapes(commands.tail))
-    case LineCommand(x1, y1, x2, y2) :: _ => new Shape(Line(x1,y1,x2,y2)) :: CommandsToShapes(commands.tail)
-    case RectangleCommand(x1, y1, x2, y2) :: _ => RectTest(x1,y1,x2,y2) :: CommandsToShapes(commands.tail)
-    case CircleCommand(x1, y1, r):: _ => CircleTest(x1, y1, r) :: CommandsToShapes(commands.tail)
+    case LineCommand(x1, y1, x2, y2,color) :: _ => new Shape(Line(x1,y1,x2,y2,color)) :: CommandsToShapes(commands.tail)
+    case RectangleCommand(x1, y1, x2, y2,color) :: _ => new Shape(Rect(x1,y1,x2,y2, color)) :: CommandsToShapes(commands.tail)
+    case CircleCommand(x1, y1, r,color) :: _ => new Shape(Circle(x1, y1, r, color)) :: CommandsToShapes(commands.tail)
+    case DrawCommand(color, objects) :: _ => InterpolateDrawCommand(color, objects) ::: CommandsToShapes(commands.tail)
     case _ => List.empty
   }
 
@@ -55,15 +52,13 @@ object Painter {
     })))
   }
 
-  def CircleTest(x1: Int, y1: Int, r: Int): Shape = {
-    new Shape(List(new Point(x1,y1,"red"), new Point(x1 + 5,y1 + 5, "red")))
+  def InterpolateDrawCommand(color: String, objects: String): List[Shape] = objects match {
+    case s"($cmd)) $rest" => CommandsToShapes(List(InterpolateCommand(s"($cmd))", color))) ::: InterpolateDrawCommand(color, rest)
+    case s"($cmd))" => CommandsToShapes(List(InterpolateCommand(s"($cmd))", color)))
+    case s"($cmd $i1 $i2) $rest" => CommandsToShapes(List(InterpolateCommand(s"($cmd $i1 $i2)", color))) ::: InterpolateDrawCommand(color, rest)
+    case s"($cmd $i1 $i2)" => CommandsToShapes(List(InterpolateCommand(s"($cmd $i1 $i2)", color)))
+    case _ => List.empty
   }
-
-  def RectTest(x1: Int, y1: Int, x2: Int, y2: Int): Shape = {
-    new Shape(List(new Point(x1,y2,"green"), new Point(x2,y2, "green")))
-  }
-
-
 
   def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String = "black", slopeError: Int = 0): List[Point] = {
     if(x1 >= x2) {
@@ -77,7 +72,7 @@ object Painter {
     }
   }
 
-  def CalcCircle(x0: Int, y0: Int, x: Int, y: Int, r: Int, p: Int): List[(Int, Int)] = {
+  def CalcCircle(x0: Int, y0: Int, x: Int, y: Int, r: Int, p: Int, color: String): List[Point] = {
     if (x < y) {
       return List.empty;
     }
@@ -86,42 +81,42 @@ object Painter {
       // If the point is not on the line x = y - if it is the opposite points is already added
       if(x != y) {
         // One point for each octant + one point for each opposite
-        (y + x0, x + y0) :: (-y + x0, x + y0) :: (y + x0, -x + y0) :: (-y + x0, -x + y0) :: (x + x0, y + y0) :: (-x + x0, y + y0) :: (x + x0, -y + y0) :: (-x + x0, -y + y0) :: CalcCircle(x0, y0, x, y + 1, r, p + 2 * (y + 1) + 1)
+        new Point(y + x0, x + y0, color) :: new Point(-y + x0, x + y0, color) :: new Point(y + x0, -x + y0, color) :: new Point(-y + x0, -x + y0, color) :: new Point(x + x0, y + y0, color) :: new Point(-x + x0, y + y0, color) :: new Point(x + x0, -y + y0, color) :: new Point(-x + x0, -y + y0, color) :: CalcCircle(x0, y0, x, y + 1, r, p + 2 * (y + 1) + 1, color)
       } else {
         // One point for each octant
-        (x + x0, y + y0) :: (-x + x0, y + y0) :: (x + x0, -y + y0) :: (-x + x0, -y + y0) :: CalcCircle(x0, y0, x, y + 1, r, p + 2 * (y + 1) + 1)
+        new Point(x + x0, y + y0, color) :: new Point(-x + x0, y + y0, color) :: new Point(x + x0, -y + y0, color) :: new Point(-x + x0, -y + y0, color) :: CalcCircle(x0, y0, x, y + 1, r, p + 2 * (y + 1) + 1, color)
       }
     } else {
       if(x != y) {
-        (y + x0, x + y0) :: (-y + x0, x + y0) :: (y + x0, -x + y0) :: (-y + x0, -x + y0) :: (x + x0, y + y0) :: (-x + x0, y + y0) :: (x + x0, -y + y0) :: (-x + x0, -y + y0) :: CalcCircle(x0, y0, x - 1, y + 1, r, p + 2 * (y + 1) - 2 * (x - 1) + 1)
+        new Point(y + x0, x + y0, color) :: new Point(-y + x0, x + y0, color) :: new Point(y + x0, -x + y0, color) :: new Point(-y + x0, -x + y0, color) :: new Point(x + x0, y + y0, color) :: new Point(-x + x0, y + y0, color) :: new Point(x + x0, -y + y0, color) :: new Point(-x + x0, -y + y0, color) :: CalcCircle(x0, y0, x - 1, y + 1, r, p + 2 * (y + 1) - 2 * (x - 1) + 1, color)
       } else {
-        (x + x0, y + y0) :: (-x + x0, y + y0) :: (x + x0, -y + y0) :: (-x + x0, -y + y0) :: CalcCircle(x0, y0, x - 1, y + 1, r, p + 2 * (y + 1) - 2 * (x - 1) + 1)
+        new Point(x + x0, y + y0, color) :: new Point(-x + x0, y + y0, color) :: new Point(x + x0, -y + y0, color) :: new Point(-x + x0, -y + y0, color) :: CalcCircle(x0, y0, x - 1, y + 1, r, p + 2 * (y + 1) - 2 * (x - 1) + 1, color)
       }
     }
   }
 
-  def Circle(x0: Int, y0: Int, r: Int): List[(Int, Int)] = {
+  def Circle(x0: Int, y0: Int, r: Int, color: String): List[Point] = {
     // Wrapping in a function to specify initial values
-    CalcCircle(x0, y0, r, 0, r, 1 - r)
+    CalcCircle(x0, y0, r, 0, r, 1 - r, color)
   }
 
-  def CalcVerticalSide(x1: Int, y1: Int, x2: Int, y2: Int): List[(Int, Int)] = {
+  def CalcVerticalSide(x1: Int, y1: Int, x2: Int, y2: Int, color: String): List[Point] = {
     if(y1 >= y2) {
-      return List[(Int, Int)]((x2, y2))
+      return List[Point](new Point(x2, y2, color))
     }
 
-    (x1, y1) :: CalcVerticalSide(x1, y1 + 1, x2, y2);
+    new Point(x1, y1, color) :: CalcVerticalSide(x1, y1 + 1, x2, y2, color);
   }
 
-  def CalcHorizontalSide(x1: Int, y1: Int, x2: Int, y2: Int): List[(Int, Int)] = {
+  def CalcHorizontalSide(x1: Int, y1: Int, x2: Int, y2: Int, color: String): List[Point] = {
     if(x1 >= x2) {
-      return List[(Int, Int)]((x2, y2))
+      return List[Point](new Point(x2, y2, color))
     }
 
-    (x1, y1) :: CalcHorizontalSide(x1 + 1, y1, x2, y2);
+    new Point(x1, y1, color) :: CalcHorizontalSide(x1 + 1, y1, x2, y2, color);
   }
 
-  def Rect(x1: Int, y1: Int, x2: Int, y2: Int): List[(Int, Int)] = {
-    CalcVerticalSide(x1, y1, x1, y2) ++ CalcHorizontalSide(x1, y2, x2, y2) ++ CalcVerticalSide(x2, y1, x2, y2) ++ CalcHorizontalSide(x1, y1, x2, y1)
+  def Rect(x1: Int, y1: Int, x2: Int, y2: Int, color: String): List[Point] = {
+    CalcVerticalSide(x1, y1, x1, y2, color) ++ CalcHorizontalSide(x1, y2, x2, y2, color) ++ CalcVerticalSide(x2, y1, x2, y2, color) ++ CalcHorizontalSide(x1, y1, x2, y1, color)
   }
 }
