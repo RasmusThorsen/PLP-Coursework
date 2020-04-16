@@ -14,14 +14,14 @@ object Painter {
   case class CircleCommand(x1: Int, y1: Int, r: Int, color: String) extends Command
   case class BoundingBoxCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
   case class TextCommand(x1: Int, y1: Int, text: String, color: String) extends Command
-  case class DrawCommand(color: String, rawObjects: String) extends Command
+  case class DrawCommand(color: String, rawObjects: String, lineNumber: Int) extends Command
   case class UnknownCommand() extends Command
 
   def Draw(program: String): List[Shape] = {
     // split the program into commands
     val commands = program.split('\n')
 
-    val interpolatedCommands = commands.map(c => InterpolateCommand(c)).toList
+    val interpolatedCommands = commands.zipWithIndex.map(c => InterpolateCommand(c._1, c._2+1)).toList
 
     var c = Circle(10, 10, 20, "black")
     var f = new Shape(fill("red", new Point(c.head.x+1, c.head.y-1, "black"), c))
@@ -31,14 +31,14 @@ object Painter {
 
   // reference: https://stackoverflow.com/questions/10804581/read-case-class-object-from-string-in-scala-something-like-haskells-read-typ
   // check how to regex integers^
-  def InterpolateCommand(command: String, color: String = "black"): Command = command match {
+  def InterpolateCommand(command: String, lineNumber: Int, color: String = "black"): Command = command match {
     case s"(BOUNDING-BOX ($x1 $y1) ($x2 $y2))" => BoundingBoxCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt)
     case s"(LINE ($x1 $y1) ($x2 $y2))" => LineCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
     case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
     case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt,color)
     case s"(TEXT-AT ($x1 $y1) $t" => TextCommand(x1.toInt, y1.toInt, t, color)
-    case s"(DRAW $color $objects)" => DrawCommand(color, objects)
-    case _ => UnknownCommand() // TODO throw exception?
+    case s"(DRAW $color $objects)" => DrawCommand(color, objects, lineNumber)
+    case _ => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${command}'")
   }
 
   def CommandsToShapes(commands: List[Command]): List[Shape] = commands match {
@@ -46,7 +46,7 @@ object Painter {
     case LineCommand(x1, y1, x2, y2,color) :: _ => new Shape(Line(x1,y1,x2,y2,color)) :: CommandsToShapes(commands.tail)
     case RectangleCommand(x1, y1, x2, y2,color) :: _ => new Shape(Rect(x1,y1,x2,y2, color)) :: CommandsToShapes(commands.tail)
     case CircleCommand(x1, y1, r,color) :: _ => new Shape(Circle(x1, y1, r, color)) :: CommandsToShapes(commands.tail)
-    case DrawCommand(color, objects) :: _ => InterpolateDrawCommand(color, objects) ::: CommandsToShapes(commands.tail)
+    case DrawCommand(color, objects, lineNumber) :: _ => InterpolateDrawCommand(color, objects, lineNumber) ::: CommandsToShapes(commands.tail)
     case _ => List.empty
   }
 
@@ -56,6 +56,7 @@ object Painter {
     })))
   }
 
+<<<<<<< HEAD
   def fill(color: String, point: Point, points: List[Point] ): List[Point] = {
       if(points.exists(p => p.x == point.x && p.y == point.y)) return points
       fill(color, new Point(point.x, point.y-1, color), new Point(point.x, point.y, color) :: fill(color, new Point(point.x, point.y+1, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x-1, point.y, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x+1, point.y, color), new Point(point.x, point.y, color) ::points))))
@@ -67,6 +68,15 @@ object Painter {
     case s"($cmd $i1 $i2) $rest" => CommandsToShapes(List(InterpolateCommand(s"($cmd $i1 $i2)", color))) ::: InterpolateDrawCommand(color, rest)
     case s"($cmd $i1 $i2)" => CommandsToShapes(List(InterpolateCommand(s"($cmd $i1 $i2)", color)))
     case _ => List.empty
+=======
+  def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Shape] = objects match {
+    case s"($cmd)) $rest" => CommandsToShapes(List(InterpolateCommand(s"($cmd))", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
+    case s"($cmd))" => CommandsToShapes(List(InterpolateCommand(s"($cmd))", lineNumber, color)))
+    case s"($cmd $i1 $i2) $rest" => CommandsToShapes(List(InterpolateCommand(s"($cmd $i1 $i2)", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
+    case s"($cmd $i1 $i2)" => CommandsToShapes(List(InterpolateCommand(s"($cmd $i1 $i2)", lineNumber, color)))
+    case "" => List.empty
+    case other => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${other}'")
+>>>>>>> 1636be1e0a25947805e40150a7d27b09ebadf761
   }
 
   def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String = "black", slopeError: Int = 0): List[Point] = {

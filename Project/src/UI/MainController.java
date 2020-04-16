@@ -34,5 +34,6 @@ public class MainController {
 
     public void sendShapesToDrawingArea(List<Painter.Shape> shapes) {
         drawingAreaController.draw(shapes);
+        systemOutputController.setTextArea("");
     }
 }
