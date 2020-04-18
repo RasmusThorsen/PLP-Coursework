@@ -69,6 +69,13 @@ object Painter {
     })
   }
 
+  def Fill(color: String, element: Element ): Element = {
+    if (element.isInstanceOf[Shape]) {
+      element.asInstanceOf[Shape].points.foreach(p => p.color = color)
+    }
+    element;
+  }
+
   def fill(color: String, point: Point, points: List[Point] ): List[Point] = {
       if(points.exists(p => p.x == point.x && p.y == point.y)) return points
       fill(color, new Point(point.x, point.y-1, color), new Point(point.x, point.y, color) :: fill(color, new Point(point.x, point.y+1, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x-1, point.y, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x+1, point.y, color), new Point(point.x, point.y, color) ::points))))
