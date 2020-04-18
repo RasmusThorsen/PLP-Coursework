@@ -5,7 +5,9 @@ import com.sun.javaws.exceptions.InvalidArgumentException
 object Painter {
 
   class Point(var x: Int, var y: Int, var color: String)
-  class Shape(var points: List[Point])
+  sealed abstract class Element
+  class Shape(var points: List[Point]) extends Element
+  class Text(var x1: Int, var y1: Int, var text: String, var color: String) extends Element
 
   sealed abstract class Command
   case class LineCommand(x1: Int, y1: Int, x2: Int, y2: Int, color: String ) extends Command
@@ -16,13 +18,13 @@ object Painter {
   case class DrawCommand(color: String, rawObjects: String, lineNumber: Int) extends Command
   case class UnknownCommand() extends Command
 
-  def Draw(program: String): List[Shape] = {
+  def Draw(program: String): List[Element] = {
     // split the program into commands
     val commands = program.split('\n')
 
     val interpolatedCommands = commands.zipWithIndex.map(c => InterpolateCommand(c._1, c._2+1)).toList
 
-    CommandsToShapes(interpolatedCommands);
+    CommandsToElements(interpolatedCommands);
   }
 
   // reference: https://stackoverflow.com/questions/10804581/read-case-class-object-from-string-in-scala-something-like-haskells-read-typ
@@ -32,36 +34,43 @@ object Painter {
     case s"(LINE ($x1 $y1) ($x2 $y2))" => LineCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
     case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
     case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt,color)
-    case s"(TEXT-AT ($x1 $y1) $t" => TextCommand(x1.toInt, y1.toInt, t, color)
+    case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toInt, y1.toInt, t, color)
     case s"(DRAW $color $objects)" => DrawCommand(color, objects, lineNumber)
     case _ => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${command}'")
   }
 
-  def CommandsToShapes(commands: List[Command]): List[Shape] = commands match {
-    case BoundingBoxCommand(x1,y1,x2,y2) :: _ => RemoveCoordinatesOutsideBoundingArea(x1, y1, x2, y2, CommandsToShapes(commands.tail))
-    case LineCommand(x1, y1, x2, y2,color) :: _ => new Shape(Line(x1,y1,x2,y2,color)) :: CommandsToShapes(commands.tail)
-    case RectangleCommand(x1, y1, x2, y2,color) :: _ => new Shape(Rect(x1,y1,x2,y2, color)) :: CommandsToShapes(commands.tail)
-    case CircleCommand(x1, y1, r,color) :: _ => new Shape(Circle(x1, y1, r, color)) :: CommandsToShapes(commands.tail)
-    case DrawCommand(color, objects, lineNumber) :: _ => InterpolateDrawCommand(color, objects, lineNumber) ::: CommandsToShapes(commands.tail)
+  def CommandsToElements(commands: List[Command]): List[Element] = commands match {
+    case BoundingBoxCommand(x1,y1,x2,y2) :: _ => RemoveCoordinatesOutsideBoundingArea(x1, y1, x2, y2, CommandsToElements(commands.tail))
+    case LineCommand(x1, y1, x2, y2,color) :: _ => new Shape(Line(x1,y1,x2,y2,color)) :: CommandsToElements(commands.tail)
+    case RectangleCommand(x1, y1, x2, y2,color) :: _ => new Shape(Rect(x1,y1,x2,y2, color)) :: CommandsToElements(commands.tail)
+    case CircleCommand(x1, y1, r,color) :: _ => new Shape(Circle(x1, y1, r, color)) :: CommandsToElements(commands.tail)
+    case DrawCommand(color, objects, lineNumber) :: _ => InterpolateDrawCommand(color, objects, lineNumber) ::: CommandsToElements(commands.tail)
+    case TextCommand(x1,y1,text,color) :: _ => new Text(x1,y1,text,color) :: CommandsToElements(commands.tail)
     case _ => List.empty
   }
 
-  def RemoveCoordinatesOutsideBoundingArea(x1: Int, y1: Int, x2: Int, y2: Int, shapesInside: List[Shape]): List[Shape] = {
-    shapesInside.map(s => new Shape(s.points.filter(p => {
-      p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
-    })))
+  def RemoveCoordinatesOutsideBoundingArea(x1: Int, y1: Int, x2: Int, y2: Int, elementsInside: List[Element]): List[Element] = {
+    elementsInside.map(s => {
+      if (s.isInstanceOf[Shape]) {
+        new Shape(s.asInstanceOf[Shape].points.filter(p => {
+          p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
+        }))
+      } else {
+        s
+      }
+    })
   }
 
-  def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Shape] = objects match {
-    case s"($cmd)) $rest" => CommandsToShapes(List(InterpolateCommand(s"($cmd))", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
-    case s"($cmd))" => CommandsToShapes(List(InterpolateCommand(s"($cmd))", lineNumber, color)))
-    case s"($cmd $i1 $i2) $rest" => CommandsToShapes(List(InterpolateCommand(s"($cmd $i1 $i2)", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
-    case s"($cmd $i1 $i2)" => CommandsToShapes(List(InterpolateCommand(s"($cmd $i1 $i2)", lineNumber, color)))
+  def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Element] = objects match {
+    case s"($cmd)) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
+    case s"($cmd))" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color)))
+    case s"($cmd $i1 $i2) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd $i1 $i2)", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
+    case s"($cmd $i1 $i2)" => CommandsToElements(List(InterpolateCommand(s"($cmd $i1 $i2)", lineNumber, color)))
     case "" => List.empty
     case other => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${other}'")
   }
 
-  def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String = "black", slopeError: Int = 0): List[Point] = {
+  def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String, slopeError: Int = 0): List[Point] = {
     if(x1 >= x2) {
       return List[Point](new Point(x2, y2, color))
     }

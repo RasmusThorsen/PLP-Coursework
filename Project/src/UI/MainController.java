@@ -32,8 +32,8 @@ public class MainController {
 
     }
 
-    public void sendShapesToDrawingArea(List<Painter.Shape> shapes) {
-        drawingAreaController.draw(shapes);
+    public void sendShapesToDrawingArea(List<Painter.Element> elements) {
+        drawingAreaController.draw(elements);
         systemOutputController.setTextArea("");
     }
 }

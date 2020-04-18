@@ -25,8 +25,8 @@ public class UserInputController {
 
     public void handleBtnDrawClick() {
         try {
-            List<Painter.Shape> shapes = Painter.Draw(this.inputText.getText());
-            this.mainController.sendShapesToDrawingArea(shapes);
+            List<Painter.Element> elements = Painter.Draw(this.inputText.getText());
+            this.mainController.sendShapesToDrawingArea(elements);
         } catch (IllegalArgumentException e) {
             this.mainController.sendValueToSystemOutput(e.getMessage());
         }
