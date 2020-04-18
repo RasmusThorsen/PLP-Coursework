@@ -6,12 +6,7 @@ import UI.Controllers.MenuBarController;
 import UI.Controllers.SystemOutputController;
 import UI.Controllers.UserInputController;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.stage.Window;
 import scala.collection.immutable.List;
-
-import java.net.URL;
-import java.util.ResourceBundle;
 
 public class MainController {
     @FXML private MenuBarController menuBarController;
@@ -28,12 +23,11 @@ public class MainController {
 
 
     public void sendValueToSystemOutput (String text) {
-        systemOutputController.setTextArea(text);
-
+        systemOutputController.append(text);
     }
 
     public void sendShapesToDrawingArea(List<Painter.Element> elements) {
         drawingAreaController.draw(elements);
-        systemOutputController.setTextArea("");
+        systemOutputController.clear();
     }
 }

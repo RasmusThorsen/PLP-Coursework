@@ -16,8 +16,12 @@ public class SystemOutputController {
         this.mainController = mainController;
     }
 
-    public void setTextArea(String text) {
-        output.setText(text);
+    public void append(String text) {
+        output.appendText(text);
+    }
+
+    public void clear() {
+        output.clear();
     }
 
 }
