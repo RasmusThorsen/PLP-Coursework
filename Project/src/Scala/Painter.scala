@@ -1,6 +1,7 @@
 package Scala
 
 import com.sun.javaws.exceptions.InvalidArgumentException
+import javafx.scene.paint.Color
 
 object Painter {
 
@@ -60,6 +61,11 @@ object Painter {
       }
     })
   }
+
+  def fill(color: String, point: Point, points: List[Point] ): List[Point] = {
+      if(points.exists(p => p.x == point.x && p.y == point.y)) return points
+      fill(color, new Point(point.x, point.y-1, color), new Point(point.x, point.y, color) :: fill(color, new Point(point.x, point.y+1, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x-1, point.y, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x+1, point.y, color), new Point(point.x, point.y, color) ::points))))
+    }
 
   def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Element] = objects match {
     case s"($cmd)) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
