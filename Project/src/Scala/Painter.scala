@@ -17,7 +17,8 @@ object Painter {
   case class BoundingBoxCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
   case class TextCommand(x1: Int, y1: Int, text: String, color: String) extends Command
   case class DrawCommand(color: String, rawObjects: String, lineNumber: Int) extends Command
-  case class CommentCommand() extends Command
+  case class EmptyLine() extends Command
+  case class Comment() extends Command
 
   def Draw(program: String): List[Element] = {
     // split the program into commands
@@ -37,7 +38,8 @@ object Painter {
     case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt,color)
     case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toInt, y1.toInt, t, color)
     case s"(DRAW $color $objects)" => DrawCommand(color, objects, lineNumber)
-    case s"//" => CommentCommand()
+    case s"//${_}" => Comment()
+    case s"" => EmptyLine()
     case _ => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${command}'")
   }
 
@@ -48,6 +50,7 @@ object Painter {
     case CircleCommand(x1, y1, r,color) :: _ => new Shape(Circle(x1, y1, r, color)) :: CommandsToElements(commands.tail)
     case DrawCommand(color, objects, lineNumber) :: _ => InterpolateDrawCommand(color, objects, lineNumber) ::: CommandsToElements(commands.tail)
     case TextCommand(x1,y1,text,color) :: _ => new Text(x1,y1,text,color) :: CommandsToElements(commands.tail)
+    case (Comment() | EmptyLine()) :: _ => CommandsToElements(commands.tail)
     case _ => List.empty
   }
 
