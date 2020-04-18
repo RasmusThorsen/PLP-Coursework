@@ -16,7 +16,8 @@ object Painter {
   case class CircleCommand(x1: Int, y1: Int, r: Int, color: String) extends Command
   case class BoundingBoxCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
   case class TextCommand(x1: Int, y1: Int, text: String, color: String) extends Command
-  case class DrawCommand(color: String, rawObjects: String, lineNumber: Int) extends Command
+  case class DrawCommand(color: String, rawElements: String, lineNumber: Int) extends Command
+  case class FillCommand(color: String, elementCommand: Command) extends Command
   case class EmptyLine() extends Command
   case class Comment() extends Command
 
@@ -37,7 +38,8 @@ object Painter {
     case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
     case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt,color)
     case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toInt, y1.toInt, t, color)
-    case s"(DRAW $color $objects)" => DrawCommand(color, objects, lineNumber)
+    case s"(DRAW $color $elements)" => DrawCommand(color, elements, lineNumber)
+    case s"(FILL $color $element)" => FillCommand(color, InterpolateCommand(element, lineNumber))
     case s"//${_}" => Comment()
     case s"" => EmptyLine()
     case _ => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${command}'")
@@ -48,8 +50,9 @@ object Painter {
     case LineCommand(x1, y1, x2, y2,color) :: _ => new Shape(Line(x1,y1,x2,y2,color)) :: CommandsToElements(commands.tail)
     case RectangleCommand(x1, y1, x2, y2,color) :: _ => new Shape(Rect(x1,y1,x2,y2, color)) :: CommandsToElements(commands.tail)
     case CircleCommand(x1, y1, r,color) :: _ => new Shape(Circle(x1, y1, r, color)) :: CommandsToElements(commands.tail)
-    case DrawCommand(color, objects, lineNumber) :: _ => InterpolateDrawCommand(color, objects, lineNumber) ::: CommandsToElements(commands.tail)
+    case DrawCommand(color, elements, lineNumber) :: _ => InterpolateDrawCommand(color, elements, lineNumber) ::: CommandsToElements(commands.tail)
     case TextCommand(x1,y1,text,color) :: _ => new Text(x1,y1,text,color) :: CommandsToElements(commands.tail)
+    case FillCommand(color, element) :: _ => Fill(color, CommandsToElements(List(element)).head) :: CommandsToElements(commands.tail)
     case (Comment() | EmptyLine()) :: _ => CommandsToElements(commands.tail)
     case _ => List.empty
   }
