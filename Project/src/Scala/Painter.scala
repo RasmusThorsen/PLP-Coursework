@@ -17,7 +17,7 @@ object Painter {
   case class BoundingBoxCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
   case class TextCommand(x1: Int, y1: Int, text: String, color: String) extends Command
   case class DrawCommand(color: String, rawObjects: String, lineNumber: Int) extends Command
-  case class UnknownCommand() extends Command
+  case class CommentCommand() extends Command
 
   def Draw(program: String): List[Element] = {
     // split the program into commands
@@ -37,6 +37,7 @@ object Painter {
     case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt,color)
     case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toInt, y1.toInt, t, color)
     case s"(DRAW $color $objects)" => DrawCommand(color, objects, lineNumber)
+    case s"//" => CommentCommand()
     case _ => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${command}'")
   }
 
@@ -68,10 +69,10 @@ object Painter {
     }
 
   def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Element] = objects match {
+    case s"($cmd ($i1) $i2) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd ($i1) $i2)", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
+    case s"($cmd ($i1) $i2)" => CommandsToElements(List(InterpolateCommand(s"($cmd ($i1) $i2)", lineNumber, color)))
     case s"($cmd)) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
     case s"($cmd))" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color)))
-    case s"($cmd $i1 $i2) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd $i1 $i2)", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
-    case s"($cmd $i1 $i2)" => CommandsToElements(List(InterpolateCommand(s"($cmd $i1 $i2)", lineNumber, color)))
     case "" => List.empty
     case other => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${other}'")
   }
