@@ -23,7 +23,12 @@ public class DrawingAreaController {
         this.drawingPane.getChildren().clear();
         elements.foreach((e ->  {
             if (e instanceof Painter.Shape) {
-                ((Painter.Shape) e).points().foreach(p -> this.drawingPane.getChildren().add(new Circle(((int) p.x()), ((int) p.y()), 1, Color.RED)));
+                ((Painter.Shape) e).points().foreach(p -> {
+                    Circle c = new Circle(((int) p.x()), ((int) p.y()), 1);
+                    c.setFill(Color.valueOf(p.color()));
+                    this.drawingPane.getChildren().add(c);
+                    return null;
+                });
             } else if (e instanceof Painter.Text) {
                 Painter.Text te = (Painter.Text) e;
                 Text t = new Text(te.x1(), te.y1(), te.text());
