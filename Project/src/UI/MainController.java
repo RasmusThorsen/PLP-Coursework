@@ -21,6 +21,7 @@ public class MainController {
         systemOutputController.init(this);
     }
 
+    public void clearSystemOutput() {systemOutputController.clear();}
 
     public void sendValueToSystemOutput (String text) {
         systemOutputController.append(text);
@@ -28,6 +29,5 @@ public class MainController {
 
     public void sendShapesToDrawingArea(List<Painter.Element> elements) {
         drawingAreaController.draw(elements);
-        systemOutputController.clear();
     }
 }
