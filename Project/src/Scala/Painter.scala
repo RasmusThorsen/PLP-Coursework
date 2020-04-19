@@ -7,8 +7,9 @@ object Painter {
 
   class Point(var x: Int, var y: Int, var color: String)
   sealed abstract class Element
-  class Shape(var points: List[Point]) extends Element
-  class Text(var x1: Int, var y1: Int, var text: String, var color: String) extends Element
+  case class Shape(var points: List[Point]) extends Element
+  case class Line(var points: List[Point]) extends Element
+  case class Text(var x1: Int, var y1: Int, var text: String, var color: String) extends Element
 
   sealed abstract class Command
   case class LineCommand(x1: Int, y1: Int, x2: Int, y2: Int, color: String ) extends Command
@@ -17,7 +18,7 @@ object Painter {
   case class BoundingBoxCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
   case class TextCommand(x1: Int, y1: Int, text: String, color: String) extends Command
   case class DrawCommand(color: String, rawElements: String, lineNumber: Int) extends Command
-  case class FillCommand(color: String, elementCommand: Command) extends Command
+  case class FillCommand(strokeColor: String, fillColor: String, elementCommand: Command) extends Command
   case class EmptyLine() extends Command
   case class Comment() extends Command
 
@@ -39,7 +40,7 @@ object Painter {
     case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt,color)
     case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toInt, y1.toInt, t, color)
     case s"(DRAW $color $elements)" => DrawCommand(color, elements, lineNumber)
-    case s"(FILL $color $element)" => FillCommand(color, InterpolateCommand(element, lineNumber))
+    case s"(FILL $fillColor $element)" => FillCommand(color, fillColor, InterpolateCommand(element, lineNumber, color))
     case s"//${_}" => Comment()
     case s"" => EmptyLine()
     case _ => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${command}'")
@@ -47,12 +48,12 @@ object Painter {
 
   def CommandsToElements(commands: List[Command]): List[Element] = commands match {
     case BoundingBoxCommand(x1,y1,x2,y2) :: _ => RemoveCoordinatesOutsideBoundingArea(x1, y1, x2, y2, CommandsToElements(commands.tail))
-    case LineCommand(x1, y1, x2, y2,color) :: _ => new Shape(Line(x1,y1,x2,y2,color)) :: CommandsToElements(commands.tail)
-    case RectangleCommand(x1, y1, x2, y2,color) :: _ => new Shape(Rect(x1,y1,x2,y2, color)) :: CommandsToElements(commands.tail)
-    case CircleCommand(x1, y1, r,color) :: _ => new Shape(Circle(x1, y1, r, color)) :: CommandsToElements(commands.tail)
+    case LineCommand(x1, y1, x2, y2,color) :: _ => Line(Line(x1,y1,x2,y2,color)) :: CommandsToElements(commands.tail)
+    case RectangleCommand(x1, y1, x2, y2,color) :: _ => Shape(Rect(x1,y1,x2,y2, color)) :: CommandsToElements(commands.tail)
+    case CircleCommand(x1, y1, r,color) :: _ => Shape(Circle(x1, y1, r, color)) :: CommandsToElements(commands.tail)
     case DrawCommand(color, elements, lineNumber) :: _ => InterpolateDrawCommand(color, elements, lineNumber) ::: CommandsToElements(commands.tail)
-    case TextCommand(x1,y1,text,color) :: _ => new Text(x1,y1,text,color) :: CommandsToElements(commands.tail)
-    case FillCommand(color, element) :: _ => Fill(color, CommandsToElements(List(element)).head) :: CommandsToElements(commands.tail)
+    case TextCommand(x1,y1,text,color) :: _ => Text(x1,y1,text,color) :: CommandsToElements(commands.tail)
+    case FillCommand(strokeColor, fillColor, element) :: _ => Fill(strokeColor, fillColor, CommandsToElements(List(element)).head) :: CommandsToElements(commands.tail)
     case (Comment() | EmptyLine()) :: _ => CommandsToElements(commands.tail)
     case _ => List.empty
   }
@@ -60,7 +61,7 @@ object Painter {
   def RemoveCoordinatesOutsideBoundingArea(x1: Int, y1: Int, x2: Int, y2: Int, elementsInside: List[Element]): List[Element] = {
     elementsInside.map(s => {
       if (s.isInstanceOf[Shape]) {
-        new Shape(s.asInstanceOf[Shape].points.filter(p => {
+        Shape(s.asInstanceOf[Shape].points.filter(p => {
           p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
         }))
       } else {
@@ -69,17 +70,15 @@ object Painter {
     })
   }
 
-  def Fill(color: String, element: Element ): Element = {
-    if (element.isInstanceOf[Shape]) {
-      element.asInstanceOf[Shape].points.foreach(p => p.color = color)
-    }
-    element;
+  def Fill(strokeColor: String, fillColor: String, element: Element ): Element = element match {
+    case Shape(points) => Shape(fill(strokeColor, fillColor, new Point(points.head.x+1, points.head.y+1, fillColor), points))
+    case _ => element
   }
 
-  def fill(color: String, point: Point, points: List[Point] ): List[Point] = {
-      if(points.exists(p => p.x == point.x && p.y == point.y)) return points
-      fill(color, new Point(point.x, point.y-1, color), new Point(point.x, point.y, color) :: fill(color, new Point(point.x, point.y+1, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x-1, point.y, color), new Point(point.x, point.y, color) ::fill(color, new Point(point.x+1, point.y, color), new Point(point.x, point.y, color) ::points))))
-    }
+  def fill(boundaryColor: String, fillColor: String, point: Point, points: List[Point]): List[Point] = {
+    if(point.color == fillColor || point.color == boundaryColor) return List.empty
+    point :: fill(boundaryColor, fillColor, new Point(point.x, point.y-1, fillColor), points) ::: fill(boundaryColor, fillColor, new Point(point.x, point.y+1, fillColor), points) ::: fill(boundaryColor, fillColor, new Point(point.x-1, point.y, fillColor), points) ::: fill(boundaryColor, fillColor, new Point(point.x+1, point.y, fillColor), points)
+  }
 
   def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Element] = objects match {
     case s"($cmd ($i1) $i2) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd ($i1) $i2)", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
