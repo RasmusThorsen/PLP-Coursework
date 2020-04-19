@@ -3,6 +3,8 @@ package Scala
 import com.sun.javaws.exceptions.InvalidArgumentException
 import javafx.scene.paint.Color
 
+import scala.collection.immutable.HashSet
+
 object Painter {
 
   class Point(var x: Int, var y: Int, var color: String)
@@ -71,13 +73,29 @@ object Painter {
   }
 
   def Fill(strokeColor: String, fillColor: String, element: Element ): Element = element match {
-    case Shape(points) => Shape(fill(strokeColor, fillColor, new Point(points.head.x+1, points.head.y+1, fillColor), points))
+    case Shape(points) => Shape(floodFill(fillColor, new Point(points.head.x+1, points.head.y+1, fillColor), points, HashSet() ++ points.map(p => (p.x, p.y))))
     case _ => element
   }
 
-  def fill(boundaryColor: String, fillColor: String, point: Point, points: List[Point]): List[Point] = {
-    if(point.color == fillColor || point.color == boundaryColor) return List.empty
-    point :: fill(boundaryColor, fillColor, new Point(point.x, point.y-1, fillColor), points) ::: fill(boundaryColor, fillColor, new Point(point.x, point.y+1, fillColor), points) ::: fill(boundaryColor, fillColor, new Point(point.x-1, point.y, fillColor), points) ::: fill(boundaryColor, fillColor, new Point(point.x+1, point.y, fillColor), points)
+  def floodFill(color: String, point: Point, points: List[Point], visited: HashSet[(Int, Int)]): List[Point] = {
+    if(visited(point.x, point.y)) return points
+    floodFill(color, nextPointUtil(point, visited), point :: points, visited + ((point.x, point.y)))
+  }
+
+  def nextPointUtil(point: Point, visited: HashSet[(Int, Int)]): Point = {
+    if(!visited(point.x, point.y+1)) {
+      //UP
+      new Point(point.x, point.y +1, point.color)
+    } else if(!visited(point.x, point.y-1)) {
+      //DOWN
+      new Point(point.x, point.y - 1, point.color)
+    }else if(!visited(point.x+1, point.y)) {
+      //RIGHT
+      new Point(point.x + 1, point.y, point.color)
+    } else {
+      //LEFT
+      new Point(point.x -1, point.y, point.color)
+    }
   }
 
   def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Element] = objects match {

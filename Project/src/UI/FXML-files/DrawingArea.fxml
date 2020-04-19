@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.layout.Pane?>
 
-<Pane fx:id="drawingPane"
-      prefHeight="200.0" prefWidth="200.0"
+<?import javafx.scene.canvas.Canvas?>
+
+<Canvas fx:id="canvas"
+      height="200.0" width="200.0"
       xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="UI.Controllers.DrawingAreaController" />
+      fx:controller="UI.Controllers.DrawingAreaController"/>
