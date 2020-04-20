@@ -9,9 +9,11 @@ object Painter {
 
   class Point(var x: Int, var y: Int, var color: String)
   sealed abstract class Element
-  case class Shape(var points: List[Point]) extends Element
+  sealed abstract class Shape extends Element
   case class Line(var points: List[Point]) extends Element
   case class Text(var x1: Int, var y1: Int, var text: String, var color: String) extends Element
+  case class Circle(var points: List[Point]) extends Shape
+  case class Rectangle(var points: List[Point]) extends Shape
 
   sealed abstract class Command
   case class LineCommand(x1: Int, y1: Int, x2: Int, y2: Int, color: String ) extends Command
@@ -51,8 +53,8 @@ object Painter {
   def CommandsToElements(commands: List[Command]): List[Element] = commands match {
     case BoundingBoxCommand(x1,y1,x2,y2) :: _ => RemoveCoordinatesOutsideBoundingArea(x1, y1, x2, y2, CommandsToElements(commands.tail))
     case LineCommand(x1, y1, x2, y2,color) :: _ => Line(Line(x1,y1,x2,y2,color)) :: CommandsToElements(commands.tail)
-    case RectangleCommand(x1, y1, x2, y2,color) :: _ => Shape(Rect(x1,y1,x2,y2, color)) :: CommandsToElements(commands.tail)
-    case CircleCommand(x1, y1, r,color) :: _ => Shape(Circle(x1, y1, r, color)) :: CommandsToElements(commands.tail)
+    case RectangleCommand(x1, y1, x2, y2,color) :: _ => Rectangle(Rect(x1,y1,x2,y2, color)) :: CommandsToElements(commands.tail)
+    case CircleCommand(x1, y1, r,color) :: _ => Circle(DrawCircle(x1, y1, r, color)) :: CommandsToElements(commands.tail)
     case DrawCommand(color, elements, lineNumber) :: _ => InterpolateDrawCommand(color, elements, lineNumber) ::: CommandsToElements(commands.tail)
     case TextCommand(x1,y1,text,color) :: _ => Text(x1,y1,text,color) :: CommandsToElements(commands.tail)
     case FillCommand(strokeColor, fillColor, element) :: _ => Fill(strokeColor, fillColor, CommandsToElements(List(element)).head) :: CommandsToElements(commands.tail)
@@ -62,8 +64,12 @@ object Painter {
 
   def RemoveCoordinatesOutsideBoundingArea(x1: Int, y1: Int, x2: Int, y2: Int, elementsInside: List[Element]): List[Element] = {
     elementsInside.map(s => {
-      if (s.isInstanceOf[Shape]) {
-        Shape(s.asInstanceOf[Shape].points.filter(p => {
+      if (s.isInstanceOf[Circle]) {
+        Circle(s.asInstanceOf[Circle].points.filter(p => {
+          p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
+        }))
+      }  else if(s.isInstanceOf[Rectangle]) {
+        Rectangle(s.asInstanceOf[Rectangle].points.filter(p => {
           p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
         }))
       } else {
@@ -73,38 +79,44 @@ object Painter {
   }
 
   def Fill(strokeColor: String, fillColor: String, element: Element ): Element = element match {
-    case Shape(points) => Shape(floodFill(fillColor, startingPointUtil(points.head, points.tail, fillColor), points, HashSet() ++ points.map(p => (p.x, p.y))))
+    case Rectangle(points) => Rectangle(ReactangleFill(fillColor, RectangleStartingPoint(points.head, points.tail, fillColor), points, HashSet() ++ points.map(p => (p.x, p.y))))
+    case Circle(points) => Circle(CircleFill(fillColor, CircleCenter(points), points, Radius(points)))
     case _ => element
   }
 
-  def startingPointUtil(point: Point, points: List[Point], color: String): Point = {
+  def CircleCenter(points: List[Point]): Point = {
+    new Point(
+      points.minBy(p => p.x).x + Radius(points),
+      points.minBy(p => p.y).y + Radius(points),
+      points.head.color)
+  }
+
+  def Radius(points: List[Point]): Int = {
+    (points.maxBy(p => p.x).x - points.minBy(p => p.x).x)/2
+  }
+
+  def RectangleStartingPoint(point: Point, points: List[Point], color: String): Point = {
     if(points == List.empty) {
       return new Point(point.x+1, point.y+1, color)
     }
     if(point.y < points.head.y || point.x < points.head.x) {
-      startingPointUtil(point, points.tail, color)
+      RectangleStartingPoint(point, points.tail, color)
     } else {
-      startingPointUtil(points.head, points.tail, color)
+      RectangleStartingPoint(points.head, points.tail, color)
     }
-
-
-
-
-    /*var startPoint: Point = points.head
-    points.foreach(p => {
-      if(p.y < startPoint.y) {
-        if(p.x < startPoint.x) {
-          startPoint =
-        }
-      }
-    })
-    return startPoint
-    */
   }
 
-  def floodFill(color: String, point: Point, points: List[Point], visited: HashSet[(Int, Int)]): List[Point] = {
+  def CircleFill(color: String, point: Point, points: List[Point], radius: Int): List[Point] = {
+    if(radius == 1) {
+      DrawCircle(point.x, point.y, radius, color)
+    }else {
+      points ::: CircleFill(color, point, DrawCircle(point.x, point.y, radius, color), radius-1)
+    }
+  }
+
+  def ReactangleFill(color: String, point: Point, points: List[Point], visited: HashSet[(Int, Int)]): List[Point] = {
     if(visited(point.x, point.y)) return points
-    floodFill(color, nextPointUtil(point, visited), point :: points, visited + ((point.x, point.y)))
+    ReactangleFill(color, nextPointUtil(point, visited), point :: points, visited + ((point.x, point.y)))
   }
 
   def nextPointUtil(point: Point, visited: HashSet[(Int, Int)]): Point = {
@@ -167,7 +179,7 @@ object Painter {
     }
   }
 
-  def Circle(x0: Int, y0: Int, r: Int, color: String): List[Point] = {
+  def DrawCircle(x0: Int, y0: Int, r: Int, color: String): List[Point] = {
     // Wrapping in a function to specify initial values
     CalcCircle(x0, y0, r, 0, r, 1 - r, color)
   }

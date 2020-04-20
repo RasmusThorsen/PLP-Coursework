@@ -39,8 +39,13 @@ public class DrawingAreaController {
 
         PixelWriter writer = gc.getPixelWriter();
         elements.foreach((e ->  {
-            if (e instanceof Painter.Shape) {
-                ((Painter.Shape) e).points().foreach(p -> {
+            if (e instanceof Painter.Circle) {
+                ((Painter.Circle) e).points().foreach(p -> {
+                    writer.setColor(p.x(), p.y(), Color.valueOf(p.color()));
+                    return null;
+                });
+            } else if (e instanceof Painter.Rectangle) {
+                ((Painter.Rectangle) e).points().foreach(p -> {
                     writer.setColor(p.x(), p.y(), Color.valueOf(p.color()));
                     return null;
                 });
