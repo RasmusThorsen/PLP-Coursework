@@ -158,20 +158,18 @@ object Painter {
     CalcCircle(x0, y0, r, 0, r, 1 - r, color)
   }
 
-  def CalcVerticalSide(x1: Int, y1: Int, x2: Int, y2: Int, color: String): List[Point] = {
+  def CalcVerticalSide(x1: Int, y1: Int, x2: Int, y2: Int, color: String, side: List[Point] = List.empty): List[Point] = {
     if(y1 >= y2) {
-      return List[Point](new Point(x2, y2, color))
+      return side;
     }
-
-    new Point(x1, y1, color) :: CalcVerticalSide(x1, y1 + 1, x2, y2, color);
+    CalcVerticalSide(x1,y1+1,x2,y2,color, new Point(x1,y1,color) :: side)
   }
 
-  def CalcHorizontalSide(x1: Int, y1: Int, x2: Int, y2: Int, color: String): List[Point] = {
+  def CalcHorizontalSide(x1: Int, y1: Int, x2: Int, y2: Int, color: String, side: List[Point] = List.empty): List[Point] = {
     if(x1 >= x2) {
-      return List[Point](new Point(x2, y2, color))
+      return side
     }
-
-    new Point(x1, y1, color) :: CalcHorizontalSide(x1 + 1, y1, x2, y2, color);
+    CalcHorizontalSide(x1+1, y1, x2,y2, color, new Point(x1,y1,color) :: side)
   }
 
   def Rect(x1: Int, y1: Int, x2: Int, y2: Int, color: String): List[Point] = {

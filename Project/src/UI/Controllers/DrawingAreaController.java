@@ -6,20 +6,30 @@ import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.PixelWriter;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import scala.collection.immutable.List;
 
+import java.util.concurrent.CancellationException;
+
 
 public class DrawingAreaController {
     private MainController mainController;
     @FXML
+    private Pane pane;
+    @FXML
     private Canvas canvas;
+
     public void init(MainController mainController) {
         this.mainController = mainController;
-        this.canvas.toBack();
+
+        this.canvas.widthProperty().bind(pane.widthProperty());
+        this.canvas.heightProperty().bind(pane.heightProperty());
+
+        this.pane.toBack();
     }
 
     public void draw(List<Painter.Element> elements) {

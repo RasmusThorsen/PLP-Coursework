@@ -26,8 +26,10 @@ public class UserInputController {
     public void handleBtnDrawClick() {
         try {
             List<Painter.Element> elements = Painter.Draw(this.inputText.getText());
+            this.mainController.clearSystemOutput();
             this.mainController.sendShapesToDrawingArea(elements);
         } catch (IllegalArgumentException e) {
+            this.mainController.clearSystemOutput();
             this.mainController.sendValueToSystemOutput(e.getMessage());
         }
     }
