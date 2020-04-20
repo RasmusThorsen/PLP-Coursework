@@ -35,7 +35,7 @@ public class DrawingAreaController {
     public void draw(List<Painter.Element> elements) {
         GraphicsContext gc = this.canvas.getGraphicsContext2D();
         // clear canvas
-        gc.clearRect(0,0,this.canvas.getHeight(), this.canvas.getWidth());
+        gc.clearRect(0,0,this.canvas.getWidth(), this.canvas.getHeight());
 
         PixelWriter writer = gc.getPixelWriter();
         elements.foreach((e ->  {
