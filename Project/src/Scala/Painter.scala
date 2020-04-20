@@ -73,18 +73,18 @@ object Painter {
   }
 
   def Fill(strokeColor: String, fillColor: String, element: Element ): Element = element match {
-    case Shape(points) => Shape(floodFill(fillColor, startingPointUtil(points.head, points.tail), points, HashSet() ++ points.map(p => (p.x, p.y))))
+    case Shape(points) => Shape(floodFill(fillColor, startingPointUtil(points.head, points.tail, fillColor), points, HashSet() ++ points.map(p => (p.x, p.y))))
     case _ => element
   }
 
-  def startingPointUtil(point: Point, points: List[Point]): Point = {
+  def startingPointUtil(point: Point, points: List[Point], color: String): Point = {
     if(points == List.empty) {
-      return new Point(point.x+1, point.y+1, point.color)
+      return new Point(point.x+1, point.y+1, color)
     }
     if(point.y < points.head.y || point.x < points.head.x) {
-      startingPointUtil(point, points.tail)
+      startingPointUtil(point, points.tail, color)
     } else {
-      startingPointUtil(points.head, points.tail)
+      startingPointUtil(points.head, points.tail, color)
     }
   }
 
