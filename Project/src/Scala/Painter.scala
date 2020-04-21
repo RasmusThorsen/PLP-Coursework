@@ -114,12 +114,9 @@ object Painter {
       FillCircle(color, new Point(point.x-1, point.y+1, color), DrawCircle(point.x-1, point.y+1, radius-1, color), radius-2))
   }
 
-  def FillCircle(color: String, point: Point, points: List[Point], radius: Int): List[Point] = {
-    if(radius == 0) {
-      new Point(point.x, point.y, color)::DrawCircle(point.x, point.y, 1, color)
-    }else {
-      points ::: FillCircle(color, point, DrawCircle(point.x, point.y, radius, color), radius-1)
-    }
+  def FillCircle(color: String, point: Point, points: List[Point], radius: Int): List[Point] = radius match {
+    case 0 => new Point(point.x, point.y, color)::DrawCircle(point.x, point.y, 1, color)
+    case _ =>  points ::: FillCircle(color, point, DrawCircle(point.x, point.y, radius, color), radius-1)
   }
 
   def ReactangleFill(color: String, point: Point, points: List[Point], visited: HashSet[(Int, Int)]): List[Point] = {
