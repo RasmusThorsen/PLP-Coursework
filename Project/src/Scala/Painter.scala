@@ -8,12 +8,15 @@ import scala.collection.immutable.HashSet
 object Painter {
 
   class Point(var x: Int, var y: Int, var color: String)
-  sealed abstract class Element
-  sealed abstract class Shape extends Element
-  case class Line(var points: List[Point]) extends Element
+
+  sealed abstract class Element()
+
+  sealed class Shape(var points: List[Point]) extends Element
+  case class Circle(ps: List[Point]) extends Shape(ps)
+  case class Rectangle(ps: List[Point]) extends Shape(ps)
+  case class Line(ps: List[Point]) extends Shape(ps)
+
   case class Text(var x1: Int, var y1: Int, var text: String, var color: String) extends Element
-  case class Circle(var points: List[Point]) extends Shape
-  case class Rectangle(var points: List[Point]) extends Shape
 
   sealed abstract class Command
   case class LineCommand(x1: Int, y1: Int, x2: Int, y2: Int, color: String ) extends Command
@@ -64,12 +67,8 @@ object Painter {
 
   def RemoveCoordinatesOutsideBoundingArea(x1: Int, y1: Int, x2: Int, y2: Int, elementsInside: List[Element]): List[Element] = {
     elementsInside.map(s => {
-      if (s.isInstanceOf[Circle]) {
-        Circle(s.asInstanceOf[Circle].points.filter(p => {
-          p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
-        }))
-      }  else if(s.isInstanceOf[Rectangle]) {
-        Rectangle(s.asInstanceOf[Rectangle].points.filter(p => {
+      if (s.isInstanceOf[Shape]) {
+        Circle(s.asInstanceOf[Shape].points.filter(p => {
           p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
         }))
       } else {
