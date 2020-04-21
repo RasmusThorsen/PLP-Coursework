@@ -107,11 +107,12 @@ object Painter {
   }
 
   def CircleFill(color: String, point: Point, points: List[Point], radius: Int): List[Point] = {
-    ((((points:::
-      FillCircle(color, new Point(point.x+1, point.y+1, color), DrawCircle(point.x+1, point.y+1, radius-1, color), radius-2)):::
+    ((((
+      FillCircle(color, new Point(point.x+1, point.y+1, color), DrawCircle(point.x+1, point.y+1, radius-1, color), radius-2):::
       FillCircle(color, new Point(point.x-1, point.y-1, color), DrawCircle(point.x-1, point.y-1, radius-1, color), radius-2)):::
       FillCircle(color, new Point(point.x+1, point.y-1, color), DrawCircle(point.x+1, point.y-1, radius-1, color), radius-2)):::
-      FillCircle(color, new Point(point.x-1, point.y+1, color), DrawCircle(point.x-1, point.y+1, radius-1, color), radius-2))
+      FillCircle(color, new Point(point.x-1, point.y+1, color), DrawCircle(point.x-1, point.y+1, radius-1, color), radius-2))):::
+      points
   }
 
   def FillCircle(color: String, point: Point, points: List[Point], radius: Int): List[Point] = radius match {
