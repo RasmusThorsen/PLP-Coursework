@@ -1,16 +1,12 @@
 package UI.Controllers;
 
-
 import Scala.Painter;
 import UI.MainController;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
-import scala.Tuple3;
-import scala.collection.immutable.List;
 
-import static jdk.nashorn.internal.objects.Global.print;
-import static jdk.nashorn.internal.objects.Global.println;
+import java.util.List;
 
 
 public class UserInputController {

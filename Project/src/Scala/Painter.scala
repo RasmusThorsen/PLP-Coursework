@@ -1,9 +1,7 @@
 package Scala
 
-import com.sun.javaws.exceptions.InvalidArgumentException
-import javafx.scene.paint.Color
-
 import scala.collection.immutable.HashSet
+import scala.jdk.CollectionConverters._
 
 object Painter {
 
@@ -29,13 +27,13 @@ object Painter {
   case class EmptyLine() extends Command
   case class Comment() extends Command
 
-  def Draw(program: String): List[Element] = {
+  def Draw(program: String) = {
     // split the program into commands
     val commands = program.split('\n')
 
     val interpolatedCommands = commands.zipWithIndex.map(c => InterpolateCommand(c._1, c._2+1)).toList
 
-    CommandsToElements(interpolatedCommands);
+    CommandsToElements(interpolatedCommands).asJava;
   }
 
   // reference: https://stackoverflow.com/questions/10804581/read-case-class-object-from-string-in-scala-something-like-haskells-read-typ

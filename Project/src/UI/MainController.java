@@ -6,7 +6,8 @@ import UI.Controllers.MenuBarController;
 import UI.Controllers.SystemOutputController;
 import UI.Controllers.UserInputController;
 import javafx.fxml.FXML;
-import scala.collection.immutable.List;
+
+import java.util.List;
 
 public class MainController {
     @FXML private MenuBarController menuBarController;
