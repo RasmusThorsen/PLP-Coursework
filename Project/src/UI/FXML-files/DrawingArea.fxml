@@ -4,6 +4,7 @@
 <Pane fx:id="pane"
       xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
+      style="-fx-background-color: white;"
       fx:controller="UI.Controllers.DrawingAreaController">
     <Canvas fx:id="canvas"
             xmlns="http://javafx.com/javafx"

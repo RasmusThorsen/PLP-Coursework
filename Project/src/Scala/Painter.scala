@@ -5,15 +5,15 @@ import scala.jdk.CollectionConverters._
 
 object Painter {
 
+  val gridGap = 30;
+
   class Point(var x: Int, var y: Int, var color: String)
 
   sealed abstract class Element()
-
   sealed class Shape(var points: List[Point]) extends Element
   case class Circle(ps: List[Point]) extends Shape(ps)
   case class Rectangle(ps: List[Point]) extends Shape(ps)
   case class Line(ps: List[Point]) extends Shape(ps)
-
   case class Text(var x1: Int, var y1: Int, var text: String, var color: String) extends Element
 
   sealed abstract class Command
@@ -39,11 +39,11 @@ object Painter {
   // reference: https://stackoverflow.com/questions/10804581/read-case-class-object-from-string-in-scala-something-like-haskells-read-typ
   // check how to regex integers^
   def InterpolateCommand(command: String, lineNumber: Int, color: String = "black"): Command = command match {
-    case s"(BOUNDING-BOX ($x1 $y1) ($x2 $y2))" => BoundingBoxCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt)
-    case s"(LINE ($x1 $y1) ($x2 $y2))" => LineCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
-    case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)
-    case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt, y1.toInt, r.toInt,color)
-    case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toInt, y1.toInt, t, color)
+    case s"(BOUNDING-BOX ($x1 $y1) ($x2 $y2))" => BoundingBoxCommand(x1.toInt * gridGap,y1.toInt * gridGap,x2.toInt * gridGap,y2.toInt * gridGap)
+    case s"(LINE ($x1 $y1) ($x2 $y2))" => LineCommand(x1.toInt * gridGap,y1.toInt * gridGap,x2.toInt * gridGap,y2.toInt * gridGap,color)
+    case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toInt * gridGap,y1.toInt * gridGap,x2.toInt * gridGap,y2.toInt * gridGap,color)
+    case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt * gridGap, y1.toInt * gridGap, r.toInt * gridGap,color)
+    case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toInt * gridGap, y1.toInt * gridGap, t, color)
     case s"(DRAW $color $elements)" => DrawCommand(color, elements, lineNumber)
     case s"(FILL $fillColor $element)" => FillCommand(color, fillColor, InterpolateCommand(element, lineNumber, color))
     case s"//${_}" => Comment()

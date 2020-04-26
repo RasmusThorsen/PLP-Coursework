@@ -15,6 +15,7 @@ public class MainController {
     @FXML private UserInputController userInputController;
     @FXML private SystemOutputController systemOutputController;
 
+    @FXML
     public void initialize(){
         menuBarController.init(this);
         drawingAreaController.init(this);
