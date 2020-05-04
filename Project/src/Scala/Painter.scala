@@ -14,14 +14,14 @@ object Painter {
   case class Circle(ps: List[Point]) extends Shape(ps)
   case class Rectangle(ps: List[Point]) extends Shape(ps)
   case class Line(ps: List[Point]) extends Shape(ps)
-  case class Text(var x1: Int, var y1: Int, var text: String, var color: String) extends Element
+  case class Text(var x: Double, var y: Double, var text: String, var color: String) extends Element
 
   sealed abstract class Command
-  case class LineCommand(x1: Int, y1: Int, x2: Int, y2: Int, color: String ) extends Command
-  case class RectangleCommand(x1: Int, y1: Int, x2: Int, y2: Int, color: String) extends Command
-  case class CircleCommand(x1: Int, y1: Int, r: Int, color: String) extends Command
-  case class BoundingBoxCommand(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
-  case class TextCommand(x1: Int, y1: Int, text: String, color: String) extends Command
+  case class LineCommand(x1: Double, y1: Double, x2: Double, y2: Double, color: String ) extends Command
+  case class RectangleCommand(x1: Double, y1: Double, x2: Double, y2: Double, color: String) extends Command
+  case class CircleCommand(x1: Double, y1: Double, r: Double, color: String) extends Command
+  case class BoundingBoxCommand(x1: Double, y1: Double, x2: Double, y2: Double) extends Command
+  case class TextCommand(x: Double, y: Double, text: String, color: String) extends Command
   case class DrawCommand(color: String, rawElements: String, lineNumber: Int) extends Command
   case class FillCommand(strokeColor: String, fillColor: String, elementCommand: Command) extends Command
   case class EmptyLine() extends Command
@@ -39,11 +39,11 @@ object Painter {
   // reference: https://stackoverflow.com/questions/10804581/read-case-class-object-from-string-in-scala-something-like-haskells-read-typ
   // check how to regex integers^
   def InterpolateCommand(command: String, lineNumber: Int, color: String = "black"): Command = command match {
-    case s"(BOUNDING-BOX ($x1 $y1) ($x2 $y2))" => BoundingBoxCommand(x1.toInt * gridGap,y1.toInt * gridGap,x2.toInt * gridGap,y2.toInt * gridGap)
-    case s"(LINE ($x1 $y1) ($x2 $y2))" => LineCommand(x1.toInt * gridGap,y1.toInt * gridGap,x2.toInt * gridGap,y2.toInt * gridGap,color)
-    case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toInt * gridGap,y1.toInt * gridGap,x2.toInt * gridGap,y2.toInt * gridGap,color)
-    case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toInt * gridGap, y1.toInt * gridGap, r.toInt * gridGap,color)
-    case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toInt * gridGap, y1.toInt * gridGap, t, color)
+    case s"(BOUNDING-BOX ($x1 $y1) ($x2 $y2))" => BoundingBoxCommand(x1.toDouble * gridGap,y1.toDouble * gridGap,x2.toDouble * gridGap,y2.toDouble * gridGap)
+    case s"(LINE ($x1 $y1) ($x2 $y2))" => LineCommand(x1.toDouble * gridGap,y1.toDouble * gridGap,x2.toDouble * gridGap,y2.toDouble * gridGap,color)
+    case s"(RECTANGLE ($x1 $y1) ($x2 $y2))" => RectangleCommand(x1.toDouble * gridGap,y1.toDouble * gridGap,x2.toDouble * gridGap,y2.toDouble * gridGap,color)
+    case s"(CIRCLE ($x1 $y1) $r)" => CircleCommand(x1.toDouble * gridGap, y1.toDouble * gridGap, r.toDouble * gridGap,color)
+    case s"(TEXT-AT ($x1 $y1) $t)" => TextCommand(x1.toDouble * gridGap, y1.toDouble * gridGap, t, color)
     case s"(DRAW $color $elements)" => DrawCommand(color, elements, lineNumber)
     case s"(FILL $fillColor $element)" => FillCommand(color, fillColor, InterpolateCommand(element, lineNumber, color))
     case s"//${_}" => Comment()
@@ -52,10 +52,10 @@ object Painter {
   }
 
   def CommandsToElements(commands: List[Command]): List[Element] = commands match {
-    case BoundingBoxCommand(x1,y1,x2,y2) :: _ => RemoveCoordinatesOutsideBoundingArea(x1, y1, x2, y2, CommandsToElements(commands.tail))
-    case LineCommand(x1, y1, x2, y2,color) :: _ => Line(Line(x1,y1,x2,y2,color)) :: CommandsToElements(commands.tail)
-    case RectangleCommand(x1, y1, x2, y2,color) :: _ => Rectangle(Rect(x1,y1,x2,y2, color)) :: CommandsToElements(commands.tail)
-    case CircleCommand(x1, y1, r,color) :: _ => Circle(DrawCircle(x1, y1, r, color)) :: CommandsToElements(commands.tail)
+    case BoundingBoxCommand(x1,y1,x2,y2) :: _ => RemoveCoordinatesOutsideBoundingArea(x1.toInt, y1.toInt, x2.toInt, y2.toInt, CommandsToElements(commands.tail))
+    case LineCommand(x1, y1, x2, y2,color) :: _ => Line(Line(x1.toInt,y1.toInt,x2.toInt,y2.toInt,color)) :: CommandsToElements(commands.tail)
+    case RectangleCommand(x1, y1, x2, y2,color) :: _ => Rectangle(Rect(x1.toInt,y1.toInt,x2.toInt,y2.toInt, color)) :: CommandsToElements(commands.tail)
+    case CircleCommand(x1, y1, r,color) :: _ => Circle(DrawCircle(x1.toInt, y1.toInt, r.toInt, color)) :: CommandsToElements(commands.tail)
     case DrawCommand(color, elements, lineNumber) :: _ => InterpolateDrawCommand(color, elements, lineNumber) ::: CommandsToElements(commands.tail)
     case TextCommand(x1,y1,text,color) :: _ => Text(x1,y1,text,color) :: CommandsToElements(commands.tail)
     case FillCommand(strokeColor, fillColor, element) :: _ => Fill(strokeColor, fillColor, CommandsToElements(List(element)).head) :: CommandsToElements(commands.tail)
@@ -67,7 +67,7 @@ object Painter {
     elementsInside.map(s => {
       if (s.isInstanceOf[Shape]) {
         Circle(s.asInstanceOf[Shape].points.filter(p => {
-          p.x < x2 && p.x > x1 && p.y < y2 && p.y > y1
+          p.x <= x2 && p.x >= x1 && p.y <= y2 && p.y >= y1
         }))
       } else {
         s

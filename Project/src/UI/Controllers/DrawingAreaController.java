@@ -5,12 +5,14 @@ import UI.MainController;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
+import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 import java.util.List;
@@ -31,15 +33,17 @@ public class DrawingAreaController {
         this.canvas.widthProperty().bind(pane.widthProperty());
         this.canvas.heightProperty().bind(pane.heightProperty());
 
-        this.canvas.heightProperty().addListener(observable -> drawGrid());
-        // this.canvas.widthProperty().addListener(observable -> drawGrid());
+        this.canvas.heightProperty().addListener(observable -> {
+            this.clear();
+            this.drawGrid();
+        });
     }
 
     public void draw(List<Painter.Element> elements) {
         GraphicsContext gc = this.canvas.getGraphicsContext2D();
 
         // clear canvas and draw grid
-        gc.clearRect(0,0,this.canvas.getWidth(), this.canvas.getHeight());
+        this.clear();
         this.drawGrid();
 
 
@@ -69,32 +73,43 @@ public class DrawingAreaController {
 
     private void drawElementHighlighted(Painter.Element e, GraphicsContext gc) {
         Color highlight = Color.YELLOWGREEN;
-
         if (e instanceof Painter.Shape) {
-            PixelWriter writer = gc.getPixelWriter();
-            ((Painter.Shape) e).points().foreach(p -> {
-                writer.setColor(this.mapX(p.x()), this.mapY(p.y()), highlight);
-                return null;
-            });
+            this.drawShape((Painter.Shape) e, gc, highlight);
         } else if (e instanceof Painter.Text) {
-            Painter.Text te = (Painter.Text) e;
-            gc.setFill(highlight);
-            gc.fillText(te.text(), this.mapX(te.x1()), this.mapY(te.y1()));
+            this.drawText((Painter.Text) e, gc, highlight);
         }
     }
 
     private void drawElement(Painter.Element e, GraphicsContext gc) {
         if (e instanceof Painter.Shape) {
-            PixelWriter writer = gc.getPixelWriter();
-            ((Painter.Shape) e).points().foreach(p -> {
-                writer.setColor(this.mapX(p.x()), this.mapY(p.y()), Color.valueOf(p.color()));
-                return null;
-            });
+            this.drawShape((Painter.Shape) e, gc);
         } else if (e instanceof Painter.Text) {
-            Painter.Text te = (Painter.Text) e;
-            gc.setFill(Paint.valueOf(te.color()));
-            gc.fillText(te.text(), this.mapX(te.x1()), this.mapY(te.y1()));
+            this.drawText((Painter.Text) e, gc, Color.valueOf(((Painter.Text) e).color()));
         }
+    }
+
+    private void drawShape(Painter.Shape shape, GraphicsContext gc, Color color) {
+        PixelWriter writer = gc.getPixelWriter();
+        shape.points().foreach(p -> {
+            writer.setColor(this.mapX(p.x()), this.mapY(p.y()), color);
+            return null;
+        });
+    }
+
+    private void drawShape(Painter.Shape shape, GraphicsContext gc) {
+        PixelWriter writer = gc.getPixelWriter();
+        shape.points().foreach(p -> {
+            writer.setColor(this.mapX(p.x()), this.mapY(p.y()), Color.valueOf(p.color()));
+            return null;
+        });
+    }
+
+    private void drawText(Painter.Text text, GraphicsContext gc, Color color) {
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER);
+        gc.setFont(new Font(18));
+        gc.setFill(color);
+        gc.fillText(text.text(), this.mapX(text.x()), this.mapY(text.y()));
     }
 
     private int mapX(int x) {
@@ -102,6 +117,14 @@ public class DrawingAreaController {
     }
 
     private int mapY(int y) {
+        return (int)(this.canvas.getHeight()) - y;
+    }
+
+    private double mapX(double x) {
+        return x;
+    }
+
+    private double mapY(double y) {
         return (int)(this.canvas.getHeight()) - y;
     }
 
@@ -121,6 +144,11 @@ public class DrawingAreaController {
         for(int i = (int) height ; i > 0 ; i-=30){
             gc.strokeLine(0, i, width, i);
         }
+    }
+
+    private void clear() {
+        GraphicsContext gc = this.canvas.getGraphicsContext2D();
+        gc.clearRect(0,0,this.canvas.getWidth(), this.canvas.getHeight());
     }
 }
 
