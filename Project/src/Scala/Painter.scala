@@ -147,16 +147,29 @@ object Painter {
     case other => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${other}'")
   }
 
-  def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String, slopeError: Int = 0): List[Point] = {
+  def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String, slopeError: Int = 0, first: Boolean = true): List[Point] = {
+    if (first) {
+      if (x1 == x2) {
+        return VerticalLine(x1, y1, y2, color)
+      }
+    }
+
     if(x1 >= x2) {
       return List[Point](new Point(x2, y2, color))
     }
 
     if(slopeError + 2 * (y2 - y1) >= 0) {
-      new Point(x1, y1, color) :: Line(x1 + 1, y1 + 1, x2, y2, color, slopeError - 2 * (x2 - x1) + 2 * (y2 - y1))
+      new Point(x1, y1, color) :: Line(x1 + 1, y1 + 1, x2, y2, color, slopeError - 2 * (x2 - x1) + 2 * (y2 - y1), false)
     } else {
-      new Point(x1, y1, color) :: Line(x1 + 1, y1, x2, y2, color, slopeError + 2 * (y2 - y1))
+      new Point(x1, y1, color) :: Line(x1 + 1, y1, x2, y2, color, slopeError + 2 * (y2 - y1), false)
     }
+
+  }
+
+  def VerticalLine(x: Int, y1: Int, y2: Int, color: String): List[Point] = (y1, y2) match {
+    case i if i._1 == i._2 => List[Point](new Point(x, y1, color))
+    case i if i._1 > i._2 => new Point(x, y2, color) :: VerticalLine(x, y1, y2 + 1, color)
+    case i if i._1 < i._2 => new Point(x, y2, color) :: VerticalLine(x, y1, y2 - 1, color)
   }
 
   def CalcCircle(x0: Int, y0: Int, x: Int, y: Int, r: Int, p: Int, color: String): List[Point] = {
