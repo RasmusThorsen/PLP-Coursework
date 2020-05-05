@@ -147,29 +147,34 @@ object Painter {
     case other => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${other}'")
   }
 
-  def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String, slopeError: Int = 0, first: Boolean = true): List[Point] = {
-    if (first) {
-      if (x1 == x2) {
-        return VerticalLine(x1, y1, y2, color)
+  def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String, slopeError: Int = 0): List[Point] = {
+    val dx = Math.abs(x2-x1)
+    val sx = if (x1 < x2) 1 else -1
+    val dy = -Math.abs(y2-y1)
+    val sy = if (y1 < y2) 1 else -1
+
+    var err = dx + dy
+
+    def InnerLine(x1: Int, y1: Int, x2: Int, y2: Int, color: String): List[Point] = {
+      if (x1 == x2 && y1 == y2) {
+        List[Point](new Point(x1, y1, color))
+      } else {
+        var x = x1
+        var y = y1
+        val e2 = 2 * err
+        if (e2 >= dy) {
+          err += dy
+          x += sx
+        }
+        if (e2 <= dx) {
+          err += dx
+          y += sy
+        }
+        new Point(x, y, color) :: InnerLine(x, y, x2, y2, color)
       }
     }
 
-    if(x1 >= x2) {
-      return List[Point](new Point(x2, y2, color))
-    }
-
-    if(slopeError + 2 * (y2 - y1) >= 0) {
-      new Point(x1, y1, color) :: Line(x1 + 1, y1 + 1, x2, y2, color, slopeError - 2 * (x2 - x1) + 2 * (y2 - y1), false)
-    } else {
-      new Point(x1, y1, color) :: Line(x1 + 1, y1, x2, y2, color, slopeError + 2 * (y2 - y1), false)
-    }
-
-  }
-
-  def VerticalLine(x: Int, y1: Int, y2: Int, color: String): List[Point] = (y1, y2) match {
-    case i if i._1 == i._2 => List[Point](new Point(x, y1, color))
-    case i if i._1 > i._2 => new Point(x, y2, color) :: VerticalLine(x, y1, y2 + 1, color)
-    case i if i._1 < i._2 => new Point(x, y2, color) :: VerticalLine(x, y1, y2 - 1, color)
+    InnerLine(x1,y1,x2,y2,color)
   }
 
   def CalcCircle(x0: Int, y0: Int, x: Int, y: Int, r: Int, p: Int, color: String): List[Point] = {
