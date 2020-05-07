@@ -14,7 +14,7 @@ object Painter {
   case class Circle(ps: List[Point]) extends Shape(ps)
   case class Rectangle(ps: List[Point]) extends Shape(ps)
   case class Line(ps: List[Point]) extends Shape(ps)
-  case class Text(var x: Double, var y: Double, var text: String, var color: String) extends Element
+  case class Text(var x: Int, var y: Int, var text: String, var color: String) extends Element
 
   sealed abstract class Command
   case class LineCommand(x1: Double, y1: Double, x2: Double, y2: Double, color: String ) extends Command
@@ -57,7 +57,7 @@ object Painter {
     case RectangleCommand(x1, y1, x2, y2,color) :: _ => Rectangle(Rect(x1.toInt,y1.toInt,x2.toInt,y2.toInt, color)) :: CommandsToElements(commands.tail)
     case CircleCommand(x1, y1, r,color) :: _ => Circle(DrawCircle(x1.toInt, y1.toInt, r.toInt, color)) :: CommandsToElements(commands.tail)
     case DrawCommand(color, elements, lineNumber) :: _ => InterpolateDrawCommand(color, elements, lineNumber) ::: CommandsToElements(commands.tail)
-    case TextCommand(x1,y1,text,color) :: _ => Text(x1,y1,text,color) :: CommandsToElements(commands.tail)
+    case TextCommand(x1,y1,text,color) :: _ => Text(x1.toInt,y1.toInt,text,color) :: CommandsToElements(commands.tail)
     case FillCommand(strokeColor, fillColor, element) :: _ => Fill(strokeColor, fillColor, CommandsToElements(List(element)).head) :: CommandsToElements(commands.tail)
     case (Comment() | EmptyLine()) :: _ => CommandsToElements(commands.tail)
     case _ => List.empty
