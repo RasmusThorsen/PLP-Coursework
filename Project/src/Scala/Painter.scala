@@ -63,6 +63,15 @@ object Painter {
     case _ => List.empty
   }
 
+  def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Element] = objects match {
+    case s"($cmd ($i1) $i2) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd ($i1) $i2)", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
+    case s"($cmd ($i1) $i2)" => CommandsToElements(List(InterpolateCommand(s"($cmd ($i1) $i2)", lineNumber, color)))
+    case s"($cmd)) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
+    case s"($cmd))" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color)))
+    case "" => List.empty
+    case other => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${other}'")
+  }
+
   def RemoveCoordinatesOutsideBoundingArea(x1: Int, y1: Int, x2: Int, y2: Int, elementsInside: List[Element]): List[Element] = {
     elementsInside.map(s => {
       if (s.isInstanceOf[Shape]) {
@@ -136,15 +145,6 @@ object Painter {
       //LEFT
       new Point(point.x -1, point.y, point.color)
     }
-  }
-
-  def InterpolateDrawCommand(color: String, objects: String, lineNumber: Int): List[Element] = objects match {
-    case s"($cmd ($i1) $i2) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd ($i1) $i2)", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
-    case s"($cmd ($i1) $i2)" => CommandsToElements(List(InterpolateCommand(s"($cmd ($i1) $i2)", lineNumber, color)))
-    case s"($cmd)) $rest" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color))) ::: InterpolateDrawCommand(color, rest, lineNumber)
-    case s"($cmd))" => CommandsToElements(List(InterpolateCommand(s"($cmd))", lineNumber, color)))
-    case "" => List.empty
-    case other => throw new IllegalArgumentException(s"Error: Couldn't parse command at line ${lineNumber}. '${other}'")
   }
 
   def Line(x1: Int, y1: Int, x2: Int, y2: Int, color: String, slopeError: Int = 0): List[Point] = {
