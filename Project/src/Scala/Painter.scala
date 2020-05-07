@@ -153,28 +153,26 @@ object Painter {
     val dy = -Math.abs(y2-y1)
     val sy = if (y1 < y2) 1 else -1
 
-    var err = dx + dy
+    def InnerLine(x1: Int, y1: Int, x2: Int, y2: Int, color: String, error: Int, points: List[Point] = List.empty): List[Point] = {
 
-    def InnerLine(x1: Int, y1: Int, x2: Int, y2: Int, color: String): List[Point] = {
+      def CalcError(): Int = {
+        def e1(): Int = if (error * 2 >= dy) dy else 0
+        def e2(): Int = if (error * 2 <= dx) dx else 0
+        error + e1() + e2();
+      }
+      def CalcX(): Int = if (error * 2 >= dy) x1 + sx else x1;
+      def CalcY(): Int = if (error * 2 <= dx) y1 + sy else y1;
+
       if (x1 == x2 && y1 == y2) {
-        List[Point](new Point(x1, y1, color))
+        new Point(x1, y1, color) :: points
       } else {
-        var x = x1
-        var y = y1
-        val e2 = 2 * err
-        if (e2 >= dy) {
-          err += dy
-          x += sx
-        }
-        if (e2 <= dx) {
-          err += dx
-          y += sy
-        }
-        new Point(x, y, color) :: InnerLine(x, y, x2, y2, color)
+        val x = CalcX()
+        val y = CalcY()
+        val err = CalcError()
+        InnerLine(x, y, x2, y2, color, err, new Point(x, y, color) :: points)
       }
     }
-
-    InnerLine(x1,y1,x2,y2,color)
+    InnerLine(x1,y1,x2,y2,color,dx+dy)
   }
 
   def CalcCircle(x0: Int, y0: Int, x: Int, y: Int, r: Int, p: Int, color: String): List[Point] = {
