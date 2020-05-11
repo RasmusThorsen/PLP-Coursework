@@ -1,0 +1,30 @@
+import org.sireum.logika._
+
+@pure def lx(x1: Z, x2: Z): ZS = {
+    l"""{
+        requires x1 >= 0
+                 x2 + 1 >= x1
+        ensures forall i: (0 ..< result.size) result(i) >= x1
+                forall i: (0 ..< result.size) result(i) <= x2
+                forall i: (0 ..< result.size - 1) result(i+1) >= result(i)
+    }"""
+
+    if (x1 <= x2) {
+        l"""{
+            1. x1 <= x2         premise
+            2. x2 + 1 >= x1     algebra 1
+            3. x1 >= 0          premise
+            4. x1 + 1 >= 0      algebra 3
+        }"""
+        val Q: ZS = lx(x1 + 1, x2)
+        val L: ZS = x1 +: Q
+        l"""{
+            1. forall i: (0 ..< L.size) L(i) >= x1 auto
+            2. forall i: (0 ..< L.size) L(i) <= x2 auto
+        }"""
+        return L
+    } else {
+        return ZS()
+    }
+}
+

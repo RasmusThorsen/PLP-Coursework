@@ -1,0 +1,35 @@
+import org.sireum.logika._
+
+@pure def ly(y1: Z, y2: Z, dx: Z, dy: Z, error: Z): ZS = {
+    l"""{
+        requires y1 >= 0
+                 y2 >= y1
+                 dx >= dy
+        ensures forall i: (0 .. < result.size) result(i) >= y1
+                forall i: (0 .. < result.size) result(i) <= y2
+    }"""
+    var err: Z = error
+    var nextY: Z = 0
+    if (y1 < y2) {
+        if (error > 0) {
+            err = err - 2*dx
+            err = err + 2*dy
+            val L: ZS = y1 +: ly(y1+1, y2, dx, dy, err)
+            l"""{
+                1. forall i: (0 .. < L.size) L(i) >= y1     auto
+                2. forall i: (0 .. < L.size) L(i) <= y2     auto
+            }"""
+            return L
+        } else {
+            err = err + 2*dy
+            val L: ZS = y1 +: ly(y1, y2, dx, dy, err)
+            l"""{
+                1. forall i: (0 .. < L.size) L(i) >= y1     auto
+                2. forall i: (0 .. < L.size) L(i) <= y2     auto
+            }"""
+            return L
+        }
+    } else {
+        return ZS(y1)
+    }
+}
